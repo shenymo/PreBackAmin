@@ -1,0 +1,23 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { setUrl( "https://api.xposed.info/") }
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        // 添加此库
+        maven { setUrl("https://api.xposed.info/" )}
+        maven { setUrl("https://www.jitpack.io" )}
+        maven {url 'https://dl.bintray.com/jetbrains/anko'} //这是你需要加入的，这个是解决这个问题的关键地方，我就是添加这个maven后不再报上面的错误了
+        maven { setUrl("https://s01.oss.sonatype.org/content/repositories/releases" )}
+    }
+}
+
+rootProject.name = "PreBackAmin"
+include ':app'

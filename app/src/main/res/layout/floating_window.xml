@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_layout"
+    android:layout_width="320dp"
+    android:layout_height="135dp"
+    android:background="@drawable/bg_floating_window"
+    android:elevation="4dp"
+    android:minWidth="320dp"
+    android:orientation="vertical"
+    android:paddingLeft="5dp"
+    android:paddingTop="5dp"
+    android:paddingBottom="5dp"
+    >
+
+
+    <LinearLayout
+        android:id="@+id/app_info_show"
+        android:layout_width="match_parent"
+        android:layout_height="80dp">
+
+        <ImageView
+            android:id="@+id/app_info_icon"
+            android:layout_width="60dp"
+            android:layout_height="match_parent"
+            android:padding="5dp"
+            android:src="@mipmap/tim" />
+
+        <LinearLayout
+            android:id="@+id/app_info_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp">
+
+            <TextView
+                android:id="@+id/app_info_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:text="App名称" />
+
+            <TextView
+                android:id="@+id/pkgName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:text="包名"
+                android:textSize="14dp" />
+
+            <TextView
+                android:id="@+id/activityName"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:text="com.tencent.tim.com.tencent.mobileqq.activity.SplashActivity"
+                android:textSize="12dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/btns"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:paddingBottom="0dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/add2blackList"
+            android:layout_width="50pt"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:background="@drawable/btn_rounded_bg"
+            android:text="拉入黑名单"
+            android:textColor="#FFFFFFFF" />
+        <Button
+            android:id="@+id/remove2blackList"
+            android:layout_width="50pt"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="15dp"
+            android:background="@drawable/btn_rounded_bg"
+            android:visibility="gone"
+            android:text="移出黑名单"
+            android:textColor="#FFFFFFFF" />
+
+        <Button
+            android:id="@+id/btn_close"
+            android:layout_width="50pt"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:background="@drawable/btn_rounded_bg"
+            android:text="退出"
+            android:textColor="#FFFFFFFF" />
+    </LinearLayout>
+
+</LinearLayout>
