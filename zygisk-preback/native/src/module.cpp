@@ -1,11 +1,12 @@
-﻿#include <jni.h>
-#include <android/log.h>
+﻿#include <android/log.h>
 #include <cstring>
 #include "zygisk.hpp"
 
 namespace {
 constexpr const char *kTag = "PreBackZygisk";
-constexpr jint kEnableOnBackFlag = 1 << 3;
+constexpr jint kEnableOnBackAppFlag = 1 << 3; // ApplicationInfo.PRIVATE_FLAG_EXT_ENABLE_ON_BACK_INVOKED_CALLBACK
+constexpr jint kEnableOnBackActivityFlag = 1 << 2; // ActivityInfo.PRIVATE_FLAG_ENABLE_ON_BACK_INVOKED_CALLBACK
+constexpr jint kDisableOnBackActivityFlag = 1 << 3; // ActivityInfo.PRIVATE_FLAG_DISABLE_ON_BACK_INVOKED_CALLBACK
 constexpr jint kAndroid13 = 33;
 
 jint getSdkInt(JNIEnv *env) {
@@ -25,7 +26,7 @@ jint getSdkInt(JNIEnv *env) {
     return sdk;
 }
 
-void setFlag(JNIEnv *env, jobject appInfo) {
+void setApplicationFlag(JNIEnv *env, jobject appInfo) {
     if (!appInfo) {
         return;
     }
@@ -42,12 +43,44 @@ void setFlag(JNIEnv *env, jobject appInfo) {
     }
 
     jint flags = env->GetIntField(appInfo, privateFlagsExtField);
-    if ((flags & kEnableOnBackFlag) == 0) {
-        flags |= kEnableOnBackFlag;
+    if ((flags & kEnableOnBackAppFlag) == 0) {
+        flags |= kEnableOnBackAppFlag;
         env->SetIntField(appInfo, privateFlagsExtField, flags);
         __android_log_print(ANDROID_LOG_DEBUG, kTag, "privateFlagsExt updated -> %d", flags);
     }
     env->DeleteLocalRef(appInfoClass);
+}
+
+void setActivityFlag(JNIEnv *env, jobject activityInfo) {
+    if (!activityInfo) {
+        return;
+    }
+    jclass activityInfoClass = env->GetObjectClass(activityInfo);
+    if (!activityInfoClass) {
+        env->ExceptionClear();
+        return;
+    }
+    jfieldID privateFlagsField = env->GetFieldID(activityInfoClass, "privateFlags", "I");
+    if (!privateFlagsField) {
+        env->ExceptionClear();
+        env->DeleteLocalRef(activityInfoClass);
+        return;
+    }
+    jint flags = env->GetIntField(activityInfo, privateFlagsField);
+    bool updated = false;
+    if ((flags & kEnableOnBackActivityFlag) == 0) {
+        flags |= kEnableOnBackActivityFlag;
+        updated = true;
+    }
+    if ((flags & kDisableOnBackActivityFlag) != 0) {
+        flags &= ~kDisableOnBackActivityFlag;
+        updated = true;
+    }
+    if (updated) {
+        env->SetIntField(activityInfo, privateFlagsField, flags);
+        __android_log_print(ANDROID_LOG_DEBUG, kTag, "activity privateFlags updated -> %d", flags);
+    }
+    env->DeleteLocalRef(activityInfoClass);
 }
 
 void patchLoadedApk(JNIEnv *env, jobject bindData) {
@@ -64,7 +97,7 @@ void patchLoadedApk(JNIEnv *env, jobject bindData) {
     if (appInfoField) {
         jobject appInfo = env->GetObjectField(bindData, appInfoField);
         if (appInfo) {
-            setFlag(env, appInfo);
+            setApplicationFlag(env, appInfo);
             env->DeleteLocalRef(appInfo);
         }
     } else {
@@ -81,8 +114,47 @@ void patchLoadedApk(JNIEnv *env, jobject bindData) {
                 if (laAppInfoField) {
                     jobject laAppInfo = env->GetObjectField(loadedApk, laAppInfoField);
                     if (laAppInfo) {
-                        setFlag(env, laAppInfo);
+                        setApplicationFlag(env, laAppInfo);
                         env->DeleteLocalRef(laAppInfo);
+                    }
+                } else {
+                    env->ExceptionClear();
+                }
+
+                // Update cached ActivityInfo instances if present
+                jfieldID activityInfoMapField = env->GetFieldID(loadedApkClass, "mActivityInfo", "Landroid/util/ArrayMap;");
+                if (activityInfoMapField) {
+                    jobject activityInfoMap = env->GetObjectField(loadedApk, activityInfoMapField);
+                    if (activityInfoMap) {
+                        jclass arrayMapClass = env->FindClass("android/util/ArrayMap");
+                        if (arrayMapClass) {
+                            jmethodID sizeMethod = env->GetMethodID(arrayMapClass, "size", "()I");
+                            jmethodID valueAtMethod = env->GetMethodID(arrayMapClass, "valueAt", "(I)Ljava/lang/Object;");
+                            if (sizeMethod && valueAtMethod) {
+                                jint size = env->CallIntMethod(activityInfoMap, sizeMethod);
+                                if (!env->ExceptionCheck()) {
+                                    for (jint i = 0; i < size; ++i) {
+                                        jobject info = env->CallObjectMethod(activityInfoMap, valueAtMethod, i);
+                                        if (env->ExceptionCheck()) {
+                                            env->ExceptionClear();
+                                            break;
+                                        }
+                                        if (info) {
+                                            setActivityFlag(env, info);
+                                            env->DeleteLocalRef(info);
+                                        }
+                                    }
+                                } else {
+                                    env->ExceptionClear();
+                                }
+                            } else {
+                                env->ExceptionClear();
+                            }
+                            env->DeleteLocalRef(arrayMapClass);
+                        } else {
+                            env->ExceptionClear();
+                        }
+                        env->DeleteLocalRef(activityInfoMap);
                     }
                 } else {
                     env->ExceptionClear();
@@ -109,7 +181,7 @@ bool shouldSkipProcess(JNIEnv *env, const zygisk::AppSpecializeArgs *args) {
         return false;
     }
     bool skip = false;
-    if (name[0] == 0) {
+    if (name[0] == '\0') {
         skip = true;
     } else if (strncmp(name, "com.android.systemui", 21) == 0) {
         skip = true;
