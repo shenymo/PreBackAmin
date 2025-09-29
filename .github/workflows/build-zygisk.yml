@@ -1,0 +1,42 @@
+﻿name: Build Zygisk PoC
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'zygisk-preback/**'
+      - '.github/workflows/build-zygisk.yml'
+  pull_request:
+    paths:
+      - 'zygisk-preback/**'
+      - '.github/workflows/build-zygisk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Android NDK
+        uses: android-actions/setup-ndk@v3
+        with:
+          ndk-version: 26.1.10909125
+
+      - name: Build Zygisk libraries
+        working-directory: zygisk-preback
+        run: |
+          bash build.sh
+
+      - name: Package Magisk module
+        working-directory: zygisk-preback/module
+        run: |
+          zip -r ../preback-zygisk-poc.zip .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: preback-zygisk-poc
+          path: zygisk-preback/preback-zygisk-poc.zip
+          if-no-files-found: error

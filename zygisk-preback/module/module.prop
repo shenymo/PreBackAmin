@@ -1,0 +1,7 @@
+﻿id=preback-zygisk-poc
+name=Predictive Back Zygisk PoC
+version=0.1.0
+versionCode=1
+author=Codex
+description=Force enable predictive back privateFlagsExt via Zygisk PoC
+minMagisk=26000
