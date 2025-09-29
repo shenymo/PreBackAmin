@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'zygisk-preback/**'
-      - '.github/workflows/build-zygisk.yml'
+      - "zygisk-preback/**"
+      - ".github/workflows/build-zygisk.yml"
   pull_request:
     paths:
-      - 'zygisk-preback/**'
-      - '.github/workflows/build-zygisk.yml'
+      - "zygisk-preback/**"
+      - ".github/workflows/build-zygisk.yml"
 
 jobs:
   build:
@@ -20,9 +20,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Android NDK
-        uses: android-actions/setup-ndk@v3
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
         with:
           ndk-version: 26.1.10909125
+
+      - name: Export NDK variables
+        run: |
+          echo "ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
+          echo "ANDROID_NDK=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
 
       - name: Build Zygisk libraries
         working-directory: zygisk-preback
