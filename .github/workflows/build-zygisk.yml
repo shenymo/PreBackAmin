@@ -23,7 +23,7 @@ jobs:
         id: setup-ndk
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: 26.1.10909125
+          ndk-version: r26d
 
       - name: Export NDK variables
         run: |
